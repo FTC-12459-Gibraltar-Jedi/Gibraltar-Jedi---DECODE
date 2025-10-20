@@ -67,6 +67,7 @@ public class Jedi_Drive extends OpMode {
 
             //This is the normal version to use in the TeleOp
             double turningMultiplier = 0.5;
+            double slowModeTurningMultiplier = 0.25;
             if (!slowMode) follower.setTeleOpDrive(
                     gamepad1.left_stick_y,
                     gamepad1.left_stick_x,
@@ -78,7 +79,7 @@ public class Jedi_Drive extends OpMode {
             else follower.setTeleOpDrive(
                     gamepad1.left_stick_y * slowModeMultiplier,
                     gamepad1.left_stick_x * slowModeMultiplier,
-                    gamepad1.right_stick_x * slowModeMultiplier * turningMultiplier,
+                    gamepad1.right_stick_x * slowModeMultiplier * slowModeTurningMultiplier,
                     false // Robot Centric
             );
         }
