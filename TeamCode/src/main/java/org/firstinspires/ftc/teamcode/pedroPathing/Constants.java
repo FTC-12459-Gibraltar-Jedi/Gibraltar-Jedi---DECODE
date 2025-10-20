@@ -26,6 +26,7 @@ Constants {
             .maxPower(1)
             .xVelocity(76.0319925143024)
             .yVelocity(56.90797772745448)
+            .useBrakeModeInTeleOp(true)
             .rightFrontMotorName("Front Right")
             .rightRearMotorName("Back Right")
             .leftRearMotorName("Back Left")
