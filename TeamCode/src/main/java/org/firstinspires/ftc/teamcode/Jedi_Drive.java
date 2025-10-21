@@ -10,6 +10,7 @@ import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import java.util.function.Supplier;
@@ -26,8 +27,10 @@ public class Jedi_Drive extends OpMode {
     private double slowModeMultiplier = 0.5;
 
 
-    private Servo   encoderLift;
+    private Servo   encoderLift = null;
     private double servoPosition = 0.10;
+
+    private DcMotorSimple intake = null;
 
 
     @Override
@@ -45,6 +48,7 @@ public class Jedi_Drive extends OpMode {
         encoderLift = hardwareMap.get(Servo.class, "Servo1");
         encoderLift.setPosition(0);
 
+        intake = hardwareMap.get(DcMotorSimple.class,"Intake");
     }
 
     @Override
@@ -138,6 +142,15 @@ public class Jedi_Drive extends OpMode {
         if (gamepad1.dpadRightWasPressed()) {
             servoPosition = Math.min(0.5, servoPosition + 0.01);
         }
+
+        if (gamepad1.a) {
+            intake.setPower(1.0);
+        } else {
+            intake.setPower(0.0);
+        }
+
+
+
 
 
 
