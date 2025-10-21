@@ -31,6 +31,7 @@ public class Jedi_Drive extends OpMode {
     private double servoPosition = 0.10;
 
     private DcMotorSimple intake = null;
+    private DcMotorSimple shooter = null;
 
 
     @Override
