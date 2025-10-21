@@ -48,7 +48,7 @@ public class Jedi_Drive extends OpMode {
         encoderLift = hardwareMap.get(Servo.class, "Servo1");
         encoderLift.setPosition(0);
 
-        intake = hardwareMap.get(DcMotorSimple.class,"Intake");
+        //intake = hardwareMap.get(DcMotorSimple.class,"Intake");
     }
 
     @Override
