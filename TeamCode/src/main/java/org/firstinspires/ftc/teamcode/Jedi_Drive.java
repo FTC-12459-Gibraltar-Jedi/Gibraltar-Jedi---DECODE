@@ -1,4 +1,5 @@
 package org.firstinspires.ftc.teamcode;
+
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
@@ -12,32 +13,46 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
-
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-
 import java.util.function.Supplier;
 
+//------------------------------------------------------------------------------------------------------------
+// OP MODE
+//------------------------------------------------------------------------------------------------------------
 @Configurable
 @TeleOp
 public class Jedi_Drive extends OpMode {
+
+    // Pedro Pathing
     private Follower follower;
     public static Pose startingPose; //See ExampleAuto to understand how to use this
     private boolean automatedDrive;
     private Supplier<PathChain> pathChain;
+
+    // Telemetry
     private TelemetryManager telemetryM;
-    private boolean slowMode = false;
-    private double slowModeMultiplier = 0.5;
 
-
+    // Hardware
     private Servo   encoderLift = null;
-    private double servoPosition = 0.10;
-
     private DcMotorSimple intake = null;
     private DcMotorSimple shooter = null;
 
+    // Driving states
+    private boolean slowMode = false;
+    private double slowModeMultiplier = 0.5;
 
+    // Attachment states
+    private boolean odometryUp = true;
+    private boolean shooterOn = false;
+    private boolean intakeOn = false;
+
+
+//------------------------------------------------------------------------------------------------------------
+// INIT
+//------------------------------------------------------------------------------------------------------------
     @Override
     public void init() {
+
         follower = Constants.createFollower(hardwareMap);
         follower.setStartingPose(startingPose == null ? new Pose() : startingPose);
         follower.update();
@@ -49,11 +64,16 @@ public class Jedi_Drive extends OpMode {
                 .build();
 
         encoderLift = hardwareMap.get(Servo.class, "Servo1");
-        encoderLift.setPosition(0);
+        encoderLift.setPosition(.65);
 
-        //intake = hardwareMap.get(DcMotorSimple.class,"Intake");
+        intake = hardwareMap.get(DcMotorSimple.class,"Intake");
+        shooter = hardwareMap.get(DcMotorSimple.class,"Shooter");
     }
 
+
+//------------------------------------------------------------------------------------------------------------
+// START
+//------------------------------------------------------------------------------------------------------------
     @Override
     public void start() {
         //The parameter controls whether the Follower should use break mode on the motors (using it is recommended).
@@ -62,29 +82,37 @@ public class Jedi_Drive extends OpMode {
         follower.startTeleopDrive();
     }
 
+//------------------------------------------------------------------------------------------------------------
+// LOOP
+//------------------------------------------------------------------------------------------------------------
     @Override
     public void loop() {
+
         //Call this once per loop
         follower.update();
         telemetryM.update();
 
+
+    //-------------------
+    // --DRIVE CONTROLS--
+    //-------------------
         if (!automatedDrive) {
             //Make the last parameter false for field-centric
             //In case the drivers want to use a "slowMode" you can scale the vectors
 
             //This is the normal version to use in the TeleOp
             if (!slowMode) follower.setTeleOpDrive(
-                    gamepad1.left_stick_y,
-                    gamepad1.left_stick_x,
-                    gamepad1.right_stick_x / 2,
+                    -gamepad1.left_stick_y,
+                    -gamepad1.left_stick_x,
+                    -gamepad1.right_stick_x / 2,
                     false // Robot Centric
             );
 
                 //This is how it looks with slowMode on
             else follower.setTeleOpDrive(
-                    gamepad1.left_stick_y * slowModeMultiplier,
-                    gamepad1.left_stick_x * slowModeMultiplier,
-                    gamepad1.right_stick_x * (slowModeMultiplier / 2),
+                    -gamepad1.left_stick_y * slowModeMultiplier,
+                    -gamepad1.left_stick_x * slowModeMultiplier,
+                    -gamepad1.right_stick_x * (slowModeMultiplier / 2),
                     false // Robot Centric
             );
         }
@@ -117,58 +145,52 @@ public class Jedi_Drive extends OpMode {
         }
 
 
+    //------------------
+    //--SERVO CONTROLS--
+    //------------------
 
-        //Servos - This section handles all servo movements in TeleOp
-
-        /*
-        Odometry pod lift servo:
-        This servo lifts up the Odometry pods at the start of Teleop.
-        During INIT the servo is set to position 0
-        */
-
-        // If DP-Up button is pressed on GP-1 move servo to 0
+        // If DP-Up button is pressed on GP-1 toggle the odometryUp variable
         if (gamepad1.dpadUpWasPressed()) {
-            encoderLift.setPosition(0);
+            odometryUp = !odometryUp;
         }
+        // Set odometry position based on the toggled state
+        encoderLift.setPosition(odometryUp ? 0.65 : 0);
 
-        // If DP-Down button is pressed on GP-1 move servo to servoPosition variable
-        if (gamepad1.dpadDownWasPressed()) {
-            encoderLift.setPosition(servoPosition);
-        }
 
-        // If DP-Left button is pressed on GP-1 decrease servoPosition variable by 0.01
+    //------------------
+    //--MOTOR CONTROLS--
+    //------------------
+
+        // If DP-Left button is pressed on GP-1 toggle the shooterOn variable
         if (gamepad1.dpadLeftWasPressed()) {
-            servoPosition = Math.max(0.1, servoPosition - 0.01);
+            shooterOn = !shooterOn;
         }
+        // Set shooter power based on the toggled state
+        shooter.setPower(shooterOn ? 1.0 : 0.0);
 
-        // If DP-Right button is pressed on GP-1 increase servoPosition variable by 0.01
+
+        // If DP-Right button is pressed on GP-1 toggle the intakeOn variable
         if (gamepad1.dpadRightWasPressed()) {
-            servoPosition = Math.min(0.5, servoPosition + 0.01);
+            intakeOn = !intakeOn;
         }
-
-        if (gamepad1.a) {
-            intake.setPower(1.0);
-        } else {
-            intake.setPower(0.0);
-        }
-
-        if (gamepad1.b) {
-            shooter.setPower(1.0);
-        } else {
-            shooter.setPower(0.0);
-        }
+        // Set intake power based on the toggled state
+        intake.setPower(intakeOn ? 1.0 : 0.0);
 
 
+    //------------------
+    //--Loop telemetry--
+    //------------------
 
-
-
-
-
-        //This section handles all custom telemetry
         telemetry.addData("Slow Mode Multiplier", slowModeMultiplier);
         telemetry.addData("Slow Mode", slowMode);
-        telemetry.addData("Servo Set Position", servoPosition);
         telemetry.addData("Current Servo Position", encoderLift.getPosition());
+
+        if (odometryUp) {
+            telemetry.addLine("Odometry UP");
+        } else {
+            telemetry.addLine("Odometry DOWN");
+
+        }
 
         //This telemetry was here from the example pedro pathing code
         telemetryM.debug("position", follower.getPose());
