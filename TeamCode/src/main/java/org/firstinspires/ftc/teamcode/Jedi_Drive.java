@@ -74,8 +74,8 @@ public class Jedi_Drive extends OpMode {
         headLight =hardwareMap.get(Servo.class,"Headlight");
         rgbLight = hardwareMap.get(Servo.class,"RGBLight");
         encoderLift.setPosition(.65);
-        headLight.setPosition(.75);
-        rgbLight.setPosition(.475);
+        headLight.setPosition(.3);
+        rgbLight.setPosition(.5);
 
 
         //-------------------
