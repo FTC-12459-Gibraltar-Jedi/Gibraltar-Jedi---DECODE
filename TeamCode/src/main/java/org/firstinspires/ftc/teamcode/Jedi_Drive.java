@@ -41,7 +41,7 @@ public class Jedi_Drive extends OpMode {
     private DcMotorSimple conveyor = null;
 
     // Driving states
-    private boolean driveMode = false;
+    private boolean driveMode = true;
     private boolean slowMode = false;
     private double slowModeMultiplier = 0.5;
 
@@ -74,7 +74,7 @@ public class Jedi_Drive extends OpMode {
         headLight =hardwareMap.get(Servo.class,"Headlight");
         rgbLight = hardwareMap.get(Servo.class,"RGBLight");
         encoderLift.setPosition(.65);
-        headLight.setPosition(.75);
+        headLight.setPosition(.3);
         rgbLight.setPosition(.475);
 
 
@@ -221,7 +221,6 @@ public class Jedi_Drive extends OpMode {
             telemetry.addLine("Odometry UP");
         } else {
             telemetry.addLine("Odometry DOWN");
-
         }
 
         //This telemetry was here from the example pedro pathing code
