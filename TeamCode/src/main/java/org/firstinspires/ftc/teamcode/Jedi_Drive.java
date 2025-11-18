@@ -198,6 +198,7 @@ public class Jedi_Drive extends OpMode {
             rgbLight.setPosition(0.28); // Red
             headLight.setPosition(0.3);
         } else {
+            // Lights off for the rest of the time
             rgbLight.setPosition(0.0); // Green (or off)
             headLight.setPosition(0.0);
         }
@@ -263,6 +264,7 @@ public class Jedi_Drive extends OpMode {
     //--GENERAL MOTOR CONTROLS--
     //--------------------------
 
+        // Run Intake forward with Driver 1 or Driver 2
         if (gamepad2.a || gamepad1.right_bumper) {
             intake.setPower(1.0);
             conveyor.setPower(-1.0);
