@@ -11,9 +11,10 @@ import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import java.util.function.Supplier;
 
@@ -23,6 +24,12 @@ import java.util.function.Supplier;
 @Configurable
 @TeleOp
 public class Jedi_Drive extends OpMode {
+
+    // Shooter constants
+    private static final double SHOOTER_RPM = 2800;
+    private static final double SHOOTER_CPR = 28; // Counts Per Revolution for the motor encoder
+    private static final double SHOOTER_TARGET_VELOCITY = (SHOOTER_RPM * SHOOTER_CPR) / 60;
+    private static final double SHOOTER_VELOCITY_TOLERANCE = 0.98; // Allow feeding when RPM is at 98% of target
 
     // Pedro Pathing
     private Follower follower;
@@ -38,7 +45,7 @@ public class Jedi_Drive extends OpMode {
     private Servo   headLight = null;
     private Servo   rgbLight = null;
     private DcMotorSimple intake = null;
-    private DcMotorSimple shooter = null;
+    private DcMotorEx shooter = null;
     private DcMotorSimple conveyor = null;
     private DcMotorSimple prelaunch = null;
 
@@ -51,7 +58,6 @@ public class Jedi_Drive extends OpMode {
     private boolean odometryUp = true;
     
     // Launch sequence states
-    private ElapsedTime launchTimer;
     private boolean launchSequenceActive = false;
 
 
@@ -87,12 +93,19 @@ public class Jedi_Drive extends OpMode {
         //----INIT MOTORS----
         //-------------------
         intake = hardwareMap.get(DcMotorSimple.class,"Intake");
-        shooter = hardwareMap.get(DcMotorSimple.class,"Shooter");
         conveyor = hardwareMap.get(DcMotorSimple.class,"Conveyor");
         prelaunch = hardwareMap.get(DcMotorSimple.class,"Prelaunch");
 
-        // Init launch timer
-        launchTimer = new ElapsedTime();
+        // Shooter motor setup for velocity control
+        shooter = hardwareMap.get(DcMotorEx.class, "Shooter");
+        shooter.setDirection(DcMotorSimple.Direction.REVERSE);
+        shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        // TODO: These PIDF values are a starting point. You will need to tune them for your specific shooter.
+        //  - Start by finding the correct F value, which is F = 32767 / max_ticks_per_second.
+        //  - Then, increase P until you get oscillations, and then back it off.
+        //  - D can then be used to dampen oscillations. I is usually not needed for velocity control.
+        shooter.setVelocityPIDFCoefficients(20.0, 0.0, 1.0, 13);
     }
 
 
@@ -192,6 +205,9 @@ public class Jedi_Drive extends OpMode {
     //-------------------
     //-- RGB INDICATOR --
     //-------------------
+    // This section is commented out as it relies on launchTimer which has been removed.
+    // Re-implementation would require a different timer or state management.
+    /*
     if (launchSequenceActive) {
         // Create a flash effect by casting the timer result to a whole number before the modulo
         if (((long) (launchTimer.milliseconds() / 250)) % 2 == 0) {
@@ -207,54 +223,51 @@ public class Jedi_Drive extends OpMode {
         rgbLight.setPosition(0.47);
         headLight.setPosition(0.3);
     }
+    */
 
 
     //---------------------------
     //--LAUNCHER MOTOR CONTROLS--
     //---------------------------
 
-        // --- AUTOMATED LAUNCH SEQUENCE ---
+        // --- AUTOMATED LAUNCH SEQUENCE (RPM-BASED) ---
         boolean launchTriggerPressed = gamepad2.right_trigger > 0.75;
+        double currentShooterVelocity = shooter.getVelocity();
+        boolean shooterAtSpeed = currentShooterVelocity >= (SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_TOLERANCE);
 
-        // Default motor powers
-        double shooterPower = 0.0;
+        // Default motor powers/velocities
+        double shooterTargetVelocity = 0.0;
         double intakePower = 0.0;
         double conveyorPower = 0.0;
         double prelaunchPower = 0.0;
 
-        // Check if the trigger is pressed to start or continue the sequence
         if (launchTriggerPressed) {
-            // If this is the first moment the trigger is pressed, reset the timer
-            if (!launchSequenceActive) {
-                launchSequenceActive = true;
-                launchTimer.reset();
-            }
+            launchSequenceActive = true;
+            // Command the shooter to spin up to the target velocity
+            shooterTargetVelocity = SHOOTER_TARGET_VELOCITY;
 
-            // Shooter spins up immediately
-            shooterPower = -1.0;
-
-            // After 2 seconds, also run the feeder motors
-            if (launchTimer.seconds() > 1.75) {
+            // If the shooter is at the required speed, run the feeder motors
+            if (shooterAtSpeed) {
                 intakePower = 1.0;
                 conveyorPower = -1.0;
                 prelaunchPower = 1.0;
             }
         } else {
-            // If the trigger is not pressed, the sequence is not active
             launchSequenceActive = false;
+            // All motors stop when the trigger is released, so powers remain 0.0
         }
 
         // --- MANUAL REVERSE (for clearing jams) ---
-        // This overrides the launch sequence if 'b' is pressed.
         if (gamepad2.y) {
             intakePower = -1.0;
             conveyorPower = 1.0;
-            prelaunchPower = 0.0; // Make sure prelaunch doesn't run in reverse
-            shooterPower = 0.0;   // Stop shooter during reverse
+            prelaunchPower = 0.0;
+            shooterTargetVelocity = 0.0; // Stop shooter during reverse
+            launchSequenceActive = false; // Ensure sequence stops
         }
 
         // --- SET FINAL MOTOR POWERS ---
-        shooter.setPower(shooterPower);
+        shooter.setVelocity(shooterTargetVelocity);
         intake.setPower(intakePower);
         conveyor.setPower(conveyorPower);
         prelaunch.setPower(prelaunchPower);
@@ -275,6 +288,10 @@ public class Jedi_Drive extends OpMode {
     //------------------
     //--Loop telemetry--
     //------------------
+        double currentShooterRPM = (shooter.getVelocity() * 60) / SHOOTER_CPR;
+        telemetry.addData("Shooter Target RPM", SHOOTER_RPM);
+        telemetry.addData("Shooter Current RPM", currentShooterRPM);
+        telemetry.addData("Shooter At Speed", shooterAtSpeed);
 
         telemetry.addData("Slow Mode Multiplier", slowModeMultiplier);
         telemetry.addData("Slow Mode", slowMode);
