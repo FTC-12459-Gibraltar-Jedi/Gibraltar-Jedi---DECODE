@@ -15,6 +15,8 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import java.util.function.Supplier;
 
@@ -26,10 +28,10 @@ import java.util.function.Supplier;
 public class Jedi_Drive extends OpMode {
 
     // Shooter constants
-    private static final double SHOOTER_RPM = 2800;
+    private static final double SHOOTER_RPM = 2850;
     private static final double SHOOTER_CPR = 28; // Counts Per Revolution for the motor encoder
     private static final double SHOOTER_TARGET_VELOCITY = (SHOOTER_RPM * SHOOTER_CPR) / 60;
-    private static final double SHOOTER_VELOCITY_TOLERANCE = 0.98; // Allow feeding when RPM is at 98% of target
+    private static final double SHOOTER_VELOCITY_TOLERANCE = 0.96; // Allow feeding when RPM is at 98% of target
 
     // Pedro Pathing
     private Follower follower;
@@ -44,21 +46,25 @@ public class Jedi_Drive extends OpMode {
     private Servo   encoderLift = null;
     private Servo   headLight = null;
     private Servo   rgbLight = null;
+    private Servo   linearActuator = null;
     private DcMotorSimple intake = null;
     private DcMotorEx shooter = null;
     private DcMotorSimple conveyor = null;
     private DcMotorSimple prelaunch = null;
 
     // Driving states
-    private boolean driveMode = true;
+    private boolean driveMode = false;
     private boolean slowMode = false;
-    private double slowModeMultiplier = 0.5;
+    private double slowModeMultiplier = 0.3;
 
     // Attachment states
     private boolean odometryUp = true;
     
     // Launch sequence states
     private boolean launchSequenceActive = false;
+
+    private ElapsedTime lightFlash = new ElapsedTime();
+    private boolean isEndGame;
 
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -84,9 +90,12 @@ public class Jedi_Drive extends OpMode {
         encoderLift = hardwareMap.get(Servo.class, "Odometry");
         headLight =hardwareMap.get(Servo.class,"Headlight");
         rgbLight = hardwareMap.get(Servo.class,"RGBLight");
+        linearActuator = hardwareMap.get(Servo.class,"Linear");
+
         encoderLift.setPosition(.65);
         headLight.setPosition(0.35);
         rgbLight.setPosition(0.47);
+        linearActuator.setPosition(0.0);
 
 
         //-------------------
@@ -105,7 +114,7 @@ public class Jedi_Drive extends OpMode {
         //  - Start by finding the correct F value, which is F = 32767 / max_ticks_per_second.
         //  - Then, increase P until you get oscillations, and then back it off.
         //  - D can then be used to dampen oscillations. I is usually not needed for velocity control.
-        shooter.setVelocityPIDFCoefficients(20.0, 0.0, 1.0, 13);
+        shooter.setVelocityPIDFCoefficients(100.0, 0.0, 3.0, 17.245);
     }
 
 
@@ -130,10 +139,21 @@ public class Jedi_Drive extends OpMode {
         follower.update();
         telemetryM.update();
 
+        if ((getRuntime() >= 99) && !isEndGame){
+            gamepad1.rumbleBlips(5);
+            isEndGame = true;
+        }
+
 
     //-------------------
     // --DRIVE CONTROLS--
     //-------------------
+
+        if (gamepad1.y) {
+            follower.setPose(new Pose(follower.getPose().getX(), follower.getPose().getY(), 0));
+        }
+
+
         if (!automatedDrive) {
             //Make the last parameter false for field-centric
             //In case the drivers want to use a "slowMode" you can scale the vectors
@@ -170,8 +190,9 @@ public class Jedi_Drive extends OpMode {
         */
 
         //Slow Mode
-        slowMode = gamepad1.left_bumper;
+        slowMode = (gamepad1.left_trigger > 0.5);
 
+        /*
         //Optional way to change slow mode strength
         if (gamepad1.xWasPressed()) {
             // Decrease multiplier, but not below 0.1
@@ -184,11 +205,12 @@ public class Jedi_Drive extends OpMode {
             slowModeMultiplier = Math.min(0.7, slowModeMultiplier + 0.1);
         }
 
+
         // Change Drive Mode to Robot Centric
-        if (gamepad1.backWasPressed()) {
+        if (gamepad1.dpad_right) {
             driveMode = !driveMode;
         }
-
+        */
 
     //------------------
     //--SERVO CONTROLS--
@@ -201,16 +223,23 @@ public class Jedi_Drive extends OpMode {
         // Set odometry position based on the toggled state
         encoderLift.setPosition(odometryUp ? 0.65 : 0);
 
+        if (gamepad2.dpad_up) {
+            linearActuator.setPosition(0.9);
+        } else if (gamepad2.dpad_right) {
+            linearActuator.setPosition(0.75);
+        } else if (gamepad2.dpad_left) {
+            linearActuator.setPosition(0.50);
+        } else if (gamepad2.dpad_down) {
+            linearActuator.setPosition(0.1);
+        }
 
     //-------------------
-    //-- RGB INDICATOR --
+    //---RGB INDICATOR---
     //-------------------
-    // This section is commented out as it relies on launchTimer which has been removed.
-    // Re-implementation would require a different timer or state management.
-    /*
-    if (launchSequenceActive) {
+
+    if (launchSequenceActive || (isEndGame && getRuntime() < 102)) {
         // Create a flash effect by casting the timer result to a whole number before the modulo
-        if (((long) (launchTimer.milliseconds() / 250)) % 2 == 0) {
+        if (((long) (lightFlash.milliseconds() / 250)) % 2 == 0) {
             rgbLight.setPosition(0.28); // Red
             headLight.setPosition(0.3);
         } else {
@@ -221,9 +250,9 @@ public class Jedi_Drive extends OpMode {
     } else {
         // When not launching, keep the light solid green
         rgbLight.setPosition(0.47);
-        headLight.setPosition(0.3);
+        headLight.setPosition(0.35);
     }
-    */
+
 
 
     //---------------------------
@@ -231,7 +260,7 @@ public class Jedi_Drive extends OpMode {
     //---------------------------
 
         // --- AUTOMATED LAUNCH SEQUENCE (RPM-BASED) ---
-        boolean launchTriggerPressed = gamepad2.right_trigger > 0.75;
+        boolean launchTriggerPressed = gamepad2.right_trigger > 0.50;
         double currentShooterVelocity = shooter.getVelocity();
         boolean shooterAtSpeed = currentShooterVelocity >= (SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_TOLERANCE);
 
@@ -278,7 +307,7 @@ public class Jedi_Drive extends OpMode {
     //--------------------------
 
         // Run Intake forward with Driver 1 or Driver 2
-        if (gamepad2.a || gamepad1.right_bumper) {
+        if (gamepad2.a || (gamepad1.right_trigger > 0.50)) {
             intake.setPower(1.0);
             conveyor.setPower(-1.0);
             prelaunch.setPower(-0.30);
@@ -303,6 +332,8 @@ public class Jedi_Drive extends OpMode {
         } else {
             telemetry.addLine("Odometry DOWN");
         }
+
+        telemetry.addData("Run Time", getRuntime());
 
         //This telemetry was here from the example pedro pathing code
         telemetryM.debug("position", follower.getPose());
