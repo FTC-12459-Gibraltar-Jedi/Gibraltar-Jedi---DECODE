@@ -7,7 +7,6 @@ import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -15,27 +14,28 @@ import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Shooter_Logic;
 
 @Autonomous
-public class Red_Auto extends OpMode {
-
+public class Red_9_Ball extends OpMode {
     private Follower follower;
     private Timer pathTimer, opModeTimer;
 
-    private Servo encoderLift = null;
-    private DcMotorEx shooter = null;
+
+    // ------------ Hardware ---------------
+    private Servo   encoderLift = null;
+    private Servo   headLight = null;
+    private Servo   rgbLight = null;
+    private Servo   linearActuator1 = null;
+    private Servo   linearActuator2 = null;
     private DcMotorSimple intake = null;
     private DcMotorSimple conveyor = null;
     private DcMotorSimple prelaunch = null;
-    private Servo   linearActuator1 = null;
-    private Servo   linearActuator2 = null;
 
+
+    // ------------ Shooter ----------------
     private Shooter_Logic shoot = new Shooter_Logic();
     private boolean shotsTriggered = false;
 
 
-
-
-
-    //State machine
+    // ----- Autonomous State Machine ------
     public enum PathState   {
         // START POSITION_END POSITION
         // DRIVE > MOVING AROUND FIELD
@@ -49,14 +49,12 @@ public class Red_Auto extends OpMode {
         drive_pickUp2POS_pickUp2EndPOS,
         drive_readjust_shootPOS,
         drive_pickUp2EndPOS_readjust,
-        drive_shootPOS_EndPOS,
-        shoot_pickUp1,
-        shoot_pickUp2
-
+        drive_shootPOS_EndPOS
     }
-
     PathState pathState;
 
+
+    //------------ Declare Poses ---------------
     private final Pose startPose = new Pose(120,128, Math.toRadians(37));
     private final Pose shootPose = new Pose(111,122, Math.toRadians(37));
     private final Pose pickUp1Pose = new Pose(98,85, Math.toRadians(0));
@@ -67,9 +65,19 @@ public class Red_Auto extends OpMode {
     private final Pose endPose = new Pose(120,104,Math.toRadians(0));
 
 
+    //------------ Declare Paths ---------------
+    private PathChain driveStartPosShootPosPath,
+            driveShootPosPickUp1PosPath,
+            drivePickUp1PosPickUp1EndPosPath,
+            drivePickUp1EndPosShootPosPath,
+            driveShootPosPickUp2PosPath,
+            drivePickUp2PosPickUp2EndPosPath,
+            drivePickUp2EndReadjustPosPath,
+            driveReadjustPosShootPosPath,
+            driveShootPosEndPosPath;
 
-    private PathChain driveStartPosShootPosPath, driveShootPosPickUp1PosPath, drivePickUp1PosPickUp1EndPosPath, drivePickUp1EndPosShootPosPath, driveShootPosPickUp2PosPath, drivePickUp2PosPickUp2EndPosPath, drivePickUp2EndReadjustPosPath, driveReadjustPosShootPosPath, driveShootPosEndPosPath;
 
+    //------------- Build Paths ---------------
     public void buildPaths() {
         driveStartPosShootPosPath = follower.pathBuilder()
                 .addPath(new BezierLine(startPose, shootPose))
@@ -107,9 +115,10 @@ public class Red_Auto extends OpMode {
                 .addPath(new BezierLine(shootPose, endPose))
                 .setLinearHeadingInterpolation(shootPose.getHeading(), endPose.getHeading())
                 .build();
-
     }
 
+
+    //------------- State Machine ---------------
     public void statePathUpdate() {
         switch (pathState) {
             case drive_startPOS_shootPOS:
@@ -127,7 +136,6 @@ public class Red_Auto extends OpMode {
                         setPathState(PathState.drive_shootPOS_pickUp1POS);
                     }
                 }
-
                 break;
             case drive_shootPOS_pickUp1POS:
                 if (!follower.isBusy()) {
@@ -210,13 +218,12 @@ public class Red_Auto extends OpMode {
     }
 
 
+    //------- State Machine Helper Functions -------
     public void setPathState(PathState newState) {
         pathState = newState;
         pathTimer.resetTimer();
-
         shotsTriggered = false;
     }
-
 
 
     @Override
@@ -232,15 +239,17 @@ public class Red_Auto extends OpMode {
         prelaunch = hardwareMap.get(DcMotorSimple.class,"Prelaunch");
         linearActuator1 = hardwareMap.get(Servo.class,"Linear");
         linearActuator2 = hardwareMap.get(Servo.class,"Linear2");
+        headLight = hardwareMap.get(Servo.class,"Headlight");
+        rgbLight = hardwareMap.get(Servo.class,"RGBLight");
         buildPaths();
         follower.setPose(startPose);
         encoderLift = hardwareMap.get(Servo.class,"Odometry");
         encoderLift.setPosition(0.1);
         linearActuator1.setPosition(0.5);
         linearActuator2.setPosition(0.5);
+        headLight.setPosition(0.35);
+        rgbLight.setPosition(0.47);
     }
-
-
 
 
     @Override
@@ -248,9 +257,6 @@ public class Red_Auto extends OpMode {
         opModeTimer.resetTimer();
         setPathState(pathState);
     }
-
-
-
 
 
     @Override
