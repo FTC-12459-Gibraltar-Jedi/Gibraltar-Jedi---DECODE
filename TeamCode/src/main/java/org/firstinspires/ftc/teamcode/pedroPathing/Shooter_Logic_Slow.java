@@ -4,10 +4,9 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-public class Shooter_Logic {
+public class Shooter_Logic_Slow {
 
     private DcMotorSimple intake = null;
     private DcMotorEx shooter = null;
@@ -93,7 +92,7 @@ public class Shooter_Logic {
                 conveyor.setPower(-1.0);
                 prelaunch.setPower(1.0);
 
-                if (stateTimer.seconds() > 4) {
+                if (stateTimer.seconds() > 4.5) {
                     shooterState = shooterState.RESET;
                 }
                 break;

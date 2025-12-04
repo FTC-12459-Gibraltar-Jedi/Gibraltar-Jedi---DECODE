@@ -7,14 +7,13 @@ import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.pedropathing.util.Timer;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import org.firstinspires.ftc.teamcode.pedroPathing.Shooter_Logic;
+import org.firstinspires.ftc.teamcode.pedroPathing.Shooter_Logic_Slow;
 
-@Autonomous
+@Autonomous(name = "BLUE 9 Ball Close", group = "BlueAutos")
 public class Blue_9_Ball extends OpMode {
     private Follower follower;
     private Timer pathTimer, opModeTimer;
@@ -32,7 +31,7 @@ public class Blue_9_Ball extends OpMode {
 
 
     // ------------ Shooter ----------------
-    private Shooter_Logic shoot = new Shooter_Logic();
+    private Shooter_Logic_Slow shoot = new Shooter_Logic_Slow();
     private boolean shotsTriggered = false;
 
 
@@ -246,7 +245,7 @@ public class Blue_9_Ball extends OpMode {
         buildPaths();
         follower.setPose(startPose);
         encoderLift = hardwareMap.get(Servo.class,"Odometry");
-        encoderLift.setPosition(0.1);
+        encoderLift.setPosition(0.0);
         linearActuator1.setPosition(0.5);
         linearActuator2.setPosition(0.5);
         headLight.setPosition(0.35);
