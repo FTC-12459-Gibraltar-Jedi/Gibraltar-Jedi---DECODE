@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.RED_AUTOS;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
@@ -10,11 +10,12 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.Prism.GoBildaPrismDriver;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Shooter_Logic_Fast;
 
-@Autonomous(name = "RED 6 Ball Far", group = "RedAutos")
-public class Red_6_Ball extends OpMode {
+@Autonomous(name = "RED FAR 6 BALL", group = "RedAutos")
+public class FAR_RED_6_BALL extends OpMode {
     private Follower follower;
     private Timer pathTimer, opModeTimer;
 
@@ -25,6 +26,7 @@ public class Red_6_Ball extends OpMode {
     private Servo   rgbLight = null;
     private Servo   linearActuator1 = null;
     private Servo   linearActuator2 = null;
+    GoBildaPrismDriver prism;
     private DcMotorSimple intake = null;
     private DcMotorSimple conveyor = null;
     private DcMotorSimple prelaunch = null;
@@ -122,6 +124,9 @@ public class Red_6_Ball extends OpMode {
                     intake.setPower(1.0);
                     conveyor.setPower(-1.0);
                     prelaunch.setPower(-0.30);
+
+                    follower.setMaxPower(0.5);
+
                     follower.followPath(drivePickUp1PosPickUp1EndPosPath, true);
                     setPathState(PathState.drive_pickUp1POS_pickUp1EndPOS);
                 }
@@ -129,6 +134,9 @@ public class Red_6_Ball extends OpMode {
             case drive_pickUp1POS_pickUp1EndPOS:
                 if (!follower.isBusy()) {
                     if (pathTimer.getElapsedTimeSeconds() >= 2) {
+
+                        follower.setMaxPower(1.0);
+
                         follower.followPath(drivePickUp1EndPosGoToShootPosPath, true);
                         setPathState(pathState.drive_pickUp1EndPOS_goToShootPOS);
                     }
@@ -190,15 +198,17 @@ public class Red_6_Ball extends OpMode {
         follower.setPose(startPose);
         encoderLift = hardwareMap.get(Servo.class,"Odometry");
         encoderLift.setPosition(0.0);
-        linearActuator1.setPosition(0.1);
-        linearActuator2.setPosition(0.1);
         headLight.setPosition(0.35);
         rgbLight.setPosition(0.47);
+        prism = hardwareMap.get(GoBildaPrismDriver.class, "prism");
     }
 
     public void start() {
         opModeTimer.resetTimer();
         setPathState(pathState);
+        linearActuator1.setPosition(0.1);
+        linearActuator2.setPosition(0.1);
+        prism.loadAnimationsFromArtboard(GoBildaPrismDriver.Artboard.ARTBOARD_0);
     }
 
     public void loop() {

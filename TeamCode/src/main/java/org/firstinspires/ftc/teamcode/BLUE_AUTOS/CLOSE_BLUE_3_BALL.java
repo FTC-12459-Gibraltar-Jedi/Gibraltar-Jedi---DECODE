@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.BLUE_AUTOS;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
@@ -10,11 +10,12 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.Prism.GoBildaPrismDriver;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Shooter_Logic_Slow;
 
-@Autonomous(name = "BLUE 3 Ball Close", group = "BlueAutos")
-public class Blue_3_Ball extends OpMode {
+@Autonomous(name = "BLUE CLOSE 3 BALL", group = "BlueAutos")
+public class CLOSE_BLUE_3_BALL extends OpMode {
     private Follower follower;
     private Timer pathTimer, opModeTimer;
 
@@ -25,6 +26,7 @@ public class Blue_3_Ball extends OpMode {
     private Servo   rgbLight = null;
     private Servo   linearActuator1 = null;
     private Servo   linearActuator2 = null;
+    GoBildaPrismDriver prism;
     private DcMotorSimple intake = null;
     private DcMotorSimple conveyor = null;
     private DcMotorSimple prelaunch = null;
@@ -128,10 +130,9 @@ public class Blue_3_Ball extends OpMode {
         follower.setPose(startPose);
         encoderLift = hardwareMap.get(Servo.class,"Odometry");
         encoderLift.setPosition(0.0);
-        linearActuator1.setPosition(0.5);
-        linearActuator2.setPosition(0.5);
         headLight.setPosition(0.35);
         rgbLight.setPosition(0.47);
+        prism = hardwareMap.get(GoBildaPrismDriver.class, "prism");
     }
 
 
@@ -139,6 +140,9 @@ public class Blue_3_Ball extends OpMode {
     public void start() {
         opModeTimer.resetTimer();
         setPathState(pathState);
+        linearActuator1.setPosition(0.5);
+        linearActuator2.setPosition(0.5);
+        prism.loadAnimationsFromArtboard(GoBildaPrismDriver.Artboard.ARTBOARD_0);
     }
 
 

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.BLUE_AUTOS;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
@@ -10,11 +10,12 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.Prism.GoBildaPrismDriver;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Shooter_Logic_Fast;
 
-@Autonomous(name = "BLUE 6 Ball Far", group = "BlueAutos")
-public class Blue_6_Ball extends OpMode {
+@Autonomous(name = "BLUE FAR 9 BALL", group = "BlueAutos")
+public class FAR_BLUE_9_BALL extends OpMode {
     private Follower follower;
     private Timer pathTimer, opModeTimer;
 
@@ -25,6 +26,7 @@ public class Blue_6_Ball extends OpMode {
     private Servo   rgbLight = null;
     private Servo   linearActuator1 = null;
     private Servo   linearActuator2 = null;
+    GoBildaPrismDriver prism;
     private DcMotorSimple intake = null;
     private DcMotorSimple conveyor = null;
     private DcMotorSimple prelaunch = null;
@@ -46,6 +48,9 @@ public class Blue_6_Ball extends OpMode {
         drive_pickUp1POS_pickUp1EndPOS,
         drive_pickUp1EndPOS_goToShootPOS,
         drive_goToShootPosShootPosPath,
+        drive_shootPOS_pickUp2POS,
+        drive_pickUp2POS_pickUp2EndPOS,
+        drive_pickUp2EndPOS_shootPOS,
         drive_shootPOS_EndPOS
     }
         PathState pathState;
@@ -57,6 +62,8 @@ public class Blue_6_Ball extends OpMode {
     private final Pose pickUp1Pose = new Pose(45,36, Math.toRadians(180));
     private final Pose pickUp1EndPose = new Pose(10,36, Math.toRadians(180));
     private final Pose goToShootPose = new Pose(45,36, Math.toRadians(90));
+    private final Pose pickUp2Pose = new Pose(45,60, Math.toRadians(180));
+    private final Pose pickUp2EndPose = new Pose(12,60, Math.toRadians(180));
     private final Pose endPose = new Pose(60,50, Math.toRadians(180));
 
 
@@ -66,6 +73,9 @@ public class Blue_6_Ball extends OpMode {
             drivePickUp1PosPickUp1EndPosPath,
             drivePickUp1EndPosGoToShootPosPath,
             driveGoToShootPosShootPosPath,
+            driveShootPosPickUp2PosPath,
+            drivePickUp2PosPickUp2EndPosPath,
+            drivePickUp2EndPosShootPosPath,
             driveShootPosEndPosPath;
 
 
@@ -90,6 +100,18 @@ public class Blue_6_Ball extends OpMode {
         driveGoToShootPosShootPosPath = follower.pathBuilder()
                 .addPath(new BezierLine(goToShootPose, shootPose))
                 .setLinearHeadingInterpolation(goToShootPose.getHeading(), shootPose.getHeading())
+                .build();
+        driveShootPosPickUp2PosPath = follower.pathBuilder()
+                .addPath(new BezierLine(shootPose, pickUp2Pose))
+                .setLinearHeadingInterpolation(shootPose.getHeading(), pickUp2Pose.getHeading())
+                .build();
+        drivePickUp2PosPickUp2EndPosPath = follower.pathBuilder()
+                .addPath(new BezierLine(pickUp2Pose, pickUp2EndPose))
+                .setLinearHeadingInterpolation(pickUp2Pose.getHeading(), pickUp2EndPose.getHeading())
+                .build();
+        drivePickUp2EndPosShootPosPath = follower.pathBuilder()
+                .addPath(new BezierLine(pickUp2EndPose, shootPose))
+                .setLinearHeadingInterpolation(pickUp2EndPose.getHeading(), shootPose.getHeading())
                 .build();
         driveShootPosEndPosPath = follower.pathBuilder()
                 .addPath(new BezierLine(shootPose, endPose))
@@ -122,6 +144,9 @@ public class Blue_6_Ball extends OpMode {
                     intake.setPower(1.0);
                     conveyor.setPower(-1.0);
                     prelaunch.setPower(-0.30);
+
+                    follower.setMaxPower(0.5);
+
                     follower.followPath(drivePickUp1PosPickUp1EndPosPath, true);
                     setPathState(PathState.drive_pickUp1POS_pickUp1EndPOS);
                 }
@@ -129,15 +154,18 @@ public class Blue_6_Ball extends OpMode {
             case drive_pickUp1POS_pickUp1EndPOS:
                 if (!follower.isBusy()) {
                     if (pathTimer.getElapsedTimeSeconds() >= 2) {
+
+                        follower.setMaxPower(1.0);
+
                         follower.followPath(drivePickUp1EndPosGoToShootPosPath, true);
-                        setPathState(pathState.drive_pickUp1EndPOS_goToShootPOS);
+                        setPathState(PathState.drive_pickUp1EndPOS_goToShootPOS);
                     }
                 }
                 break;
             case drive_pickUp1EndPOS_goToShootPOS:
                 if (!follower.isBusy()) {
                     follower.followPath(driveGoToShootPosShootPosPath, true);
-                    setPathState(pathState.drive_goToShootPosShootPosPath);
+                    setPathState(PathState.drive_goToShootPosShootPosPath);
                 }
                 break;
             case drive_goToShootPosShootPosPath:
@@ -147,11 +175,48 @@ public class Blue_6_Ball extends OpMode {
                         shotsTriggered = true;
 
                     } else if (shotsTriggered && !shoot.isBusy()) {
-                        follower.followPath(driveShootPosEndPosPath, true);
-                        setPathState(PathState.drive_shootPOS_EndPOS);
+                        follower.followPath(driveShootPosPickUp2PosPath, true);
+                        setPathState(PathState.drive_shootPOS_pickUp2POS);
                     }
                 }
                 break;
+            case drive_shootPOS_pickUp2POS:
+                if (!follower.isBusy()) {
+                    intake.setPower(1.0);
+                    conveyor.setPower(-1.0);
+                    prelaunch.setPower(-0.30);
+
+                    follower.setMaxPower(0.5);
+
+                    follower.followPath(drivePickUp2PosPickUp2EndPosPath, true);
+                    setPathState(PathState.drive_pickUp2POS_pickUp2EndPOS);
+                }
+                break;
+            case drive_pickUp2POS_pickUp2EndPOS:
+                if (!follower.isBusy()) {
+                    if (pathTimer.getElapsedTimeSeconds() >= 2) {
+
+                        follower.setMaxPower(1.0);
+
+                        follower.followPath(drivePickUp2EndPosShootPosPath, true);
+                        setPathState(PathState.drive_pickUp2EndPOS_shootPOS);
+                    }
+                }
+                break;
+            case drive_pickUp2EndPOS_shootPOS:
+                if (!follower.isBusy()) {
+                    if (!shotsTriggered) {
+                        shoot.Shoot(true);
+                        shotsTriggered = true;
+
+                    } else if (shotsTriggered && !shoot.isBusy()) {
+                        intake.setPower(0.0);
+                        conveyor.setPower(0.0);
+                        prelaunch.setPower(0.0);
+                        follower.followPath(driveShootPosEndPosPath);
+                        setPathState(PathState.drive_shootPOS_EndPOS);
+                    }
+                }
             case drive_shootPOS_EndPOS:
                 if (!follower.isBusy()) {
                     telemetry.addLine("ALl Done");
@@ -190,15 +255,17 @@ public class Blue_6_Ball extends OpMode {
         follower.setPose(startPose);
         encoderLift = hardwareMap.get(Servo.class,"Odometry");
         encoderLift.setPosition(0.0);
-        linearActuator1.setPosition(0.1);
-        linearActuator2.setPosition(0.1);
         headLight.setPosition(0.35);
         rgbLight.setPosition(0.47);
+        prism = hardwareMap.get(GoBildaPrismDriver.class, "prism");
     }
 
     public void start() {
         opModeTimer.resetTimer();
         setPathState(pathState);
+        linearActuator1.setPosition(0.1);
+        linearActuator2.setPosition(0.1);
+        prism.loadAnimationsFromArtboard(GoBildaPrismDriver.Artboard.ARTBOARD_0);
     }
 
     public void loop() {

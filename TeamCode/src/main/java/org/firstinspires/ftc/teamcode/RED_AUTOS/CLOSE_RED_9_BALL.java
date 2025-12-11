@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.RED_AUTOS;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
@@ -10,11 +10,12 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.Prism.GoBildaPrismDriver;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.pedroPathing.Shooter_Logic_Slow;
 
-@Autonomous(name = "RED 9 Ball Close", group = "RedAutos")
-public class Red_9_Ball extends OpMode {
+@Autonomous(name = "RED CLOSE 9 BALL", group = "RedAutos")
+public class CLOSE_RED_9_BALL extends OpMode {
     private Follower follower;
     private Timer pathTimer, opModeTimer;
 
@@ -25,6 +26,7 @@ public class Red_9_Ball extends OpMode {
     private Servo   rgbLight = null;
     private Servo   linearActuator1 = null;
     private Servo   linearActuator2 = null;
+    GoBildaPrismDriver prism;
     private DcMotorSimple intake = null;
     private DcMotorSimple conveyor = null;
     private DcMotorSimple prelaunch = null;
@@ -57,10 +59,10 @@ public class Red_9_Ball extends OpMode {
     //------------ Declare Poses ---------------
     private final Pose startPose = new Pose(120,128, Math.toRadians(37));
     private final Pose shootPose = new Pose(111,122, Math.toRadians(37));
-    private final Pose pickUp1Pose = new Pose(98,85, Math.toRadians(0));
-    private final Pose pickUp1EndPose = new Pose(130,85, Math.toRadians(0));
-    private final Pose pickUp2Pose = new Pose(98,60, Math.toRadians(0));
-    private final Pose pickUp2EndPose = new Pose(132,60, Math.toRadians(0));
+    private final Pose pickUp1Pose = new Pose(97,85, Math.toRadians(0));
+    private final Pose pickUp1EndPose = new Pose(128,85, Math.toRadians(0));
+    private final Pose pickUp2Pose = new Pose(97,60, Math.toRadians(0));
+    private final Pose pickUp2EndPose = new Pose(135,60, Math.toRadians(0));
     private final Pose readjustPose = new Pose(120,60, Math.toRadians(90));
     private final Pose endPose = new Pose(120,104,Math.toRadians(0));
 
@@ -142,13 +144,20 @@ public class Red_9_Ball extends OpMode {
                     intake.setPower(1.0);
                     conveyor.setPower(-1.0);
                     prelaunch.setPower(-0.30);
+
+                    follower.setMaxPower(0.5);
+
                     follower.followPath(drivePickUp1PosPickUp1EndPosPath, true);
                     setPathState(PathState.drive_pickUp1POS_pickUp1EndPOS);
+
                 }
                 break;
             case drive_pickUp1POS_pickUp1EndPOS:
                 if (!follower.isBusy()) {
                     if (pathTimer.getElapsedTimeSeconds() >= 2) {
+
+                        follower.setMaxPower(1.0);
+
                         follower.followPath(drivePickUp1EndPosShootPosPath, true);
                         setPathState(PathState.drive_pickUp1EndPOS_shootPOS);
                     }
@@ -174,6 +183,9 @@ public class Red_9_Ball extends OpMode {
                     intake.setPower(1.0);
                     conveyor.setPower(-1.0);
                     prelaunch.setPower(-0.30);
+
+                    follower.setMaxPower(0.5);
+
                     follower.followPath(drivePickUp2PosPickUp2EndPosPath, true);
                     setPathState(PathState.drive_pickUp2POS_pickUp2EndPOS);
                 }
@@ -181,6 +193,9 @@ public class Red_9_Ball extends OpMode {
             case drive_pickUp2POS_pickUp2EndPOS:
                 if (!follower.isBusy()) {
                    if (pathTimer.getElapsedTimeSeconds() >= 2) {
+
+                       follower.setMaxPower(1.0);
+
                        follower.followPath(drivePickUp2EndReadjustPosPath, true);
                        setPathState(PathState.drive_pickUp2EndPOS_readjust);
                    }
@@ -245,10 +260,9 @@ public class Red_9_Ball extends OpMode {
         follower.setPose(startPose);
         encoderLift = hardwareMap.get(Servo.class,"Odometry");
         encoderLift.setPosition(0.0);
-        linearActuator1.setPosition(0.5);
-        linearActuator2.setPosition(0.5);
         headLight.setPosition(0.35);
         rgbLight.setPosition(0.47);
+        prism = hardwareMap.get(GoBildaPrismDriver.class, "prism");
     }
 
 
@@ -256,6 +270,9 @@ public class Red_9_Ball extends OpMode {
     public void start() {
         opModeTimer.resetTimer();
         setPathState(pathState);
+        linearActuator1.setPosition(0.5);
+        linearActuator2.setPosition(0.5);
+        prism.loadAnimationsFromArtboard(GoBildaPrismDriver.Artboard.ARTBOARD_0);
     }
 
 

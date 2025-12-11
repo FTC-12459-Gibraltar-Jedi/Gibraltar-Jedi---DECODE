@@ -58,7 +58,7 @@ public class Shooter_Logic_Fast {
         //  - Start by finding the correct F value, which is F = 32767 / max_ticks_per_second.
         //  - Then, increase P until you get oscillations, and then back it off.
         //  - D can then be used to dampen oscillations. I is usually not needed for velocity control.
-        shooter.setVelocityPIDFCoefficients(100.0, 0.0, 3.0, 17.245);
+        shooter.setVelocityPIDFCoefficients(435.0060, 0.0, 3.0, 15.1970);
         shooterState = shooterState.IDLE;
         intake = hwMap.get(DcMotorSimple.class,"Intake");
         conveyor = hwMap.get(DcMotorSimple.class,"Conveyor");

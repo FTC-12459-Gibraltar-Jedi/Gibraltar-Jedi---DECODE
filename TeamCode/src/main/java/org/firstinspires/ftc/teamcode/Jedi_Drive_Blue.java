@@ -16,9 +16,11 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.Prism.GoBildaPrismDriver;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import java.util.function.Supplier;
 
@@ -42,12 +44,15 @@ public class Jedi_Drive_Blue extends OpMode {
     private static final double LONG_SHOT_MOTOR_RPM = LONG_SHOT_RPM * SHOOTER_GEAR_RATIO;
     private static final double LONG_SHOT_VELOCITY = (LONG_SHOT_MOTOR_RPM / 60.0) * SHOOTER_CPR;
     private static final double LONG_SHOT_ACTUATOR_POS = 0.1;
+    private static final PIDFCoefficients LONG_PIDF = new PIDFCoefficients(435.0060, 0, 0, 15.1970);
+
 
     // --- Low-Speed (SHORT) Shot Settings ---
     private static final double SHORT_SHOT_RPM = 2035;
     private static final double SHORT_SHOT_MOTOR_RPM = SHORT_SHOT_RPM * SHOOTER_GEAR_RATIO;
     private static final double SHORT_SHOT_VELOCITY = (SHORT_SHOT_MOTOR_RPM / 60.0) * SHOOTER_CPR;
     private static final double SHORT_SHOT_ACTUATOR_POS = 0.5;
+    private static final PIDFCoefficients SHORT_PIDF = new PIDFCoefficients(145.100, 0, 0, 15.300);
 
 
     // Pedro Pathing
@@ -65,6 +70,7 @@ public class Jedi_Drive_Blue extends OpMode {
     private Servo   rgbLight = null;
     private Servo   linearActuator1 = null;
     private Servo   linearActuator2 = null;
+    GoBildaPrismDriver prism;
     private DcMotorSimple intake = null;
     private DcMotorEx shooter = null;
     private DcMotorSimple conveyor = null;
@@ -88,7 +94,7 @@ public class Jedi_Drive_Blue extends OpMode {
     // Limelight aiming
     private Limelight3A limelight;
     private boolean isAiming;
-    private static final double ROTATIONAL_kP = -0.015;
+    private static final double ROTATIONAL_kP = -0.012;
 
 
     //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -128,8 +134,7 @@ public class Jedi_Drive_Blue extends OpMode {
         encoderLift.setPosition(.65);
         headLight.setPosition(0.35);
         rgbLight.setPosition(0.47);
-        linearActuator1.setPosition(0.1);
-        linearActuator2.setPosition(0.1);
+        prism = hardwareMap.get(GoBildaPrismDriver.class, "prism");
 
 
 
@@ -145,11 +150,8 @@ public class Jedi_Drive_Blue extends OpMode {
         shooter.setDirection(DcMotorSimple.Direction.REVERSE);
         shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        // TODO: These PIDF values are a starting point. You will need to tune them for your specific shooter.
-        //  - Start by finding the correct F value, which is F = 32767 / max_ticks_per_second.
-        //  - Then, increase P until you get oscillations, and then back it off.
-        //  - D can then be used to dampen oscillations. I is usually not needed for velocity control.
-        shooter.setVelocityPIDFCoefficients(100.0, 0.0, 3.0, 17.245);
+        // Set a default PIDF profile on init (e.g., the short shot profile)
+        shooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, SHORT_PIDF);
     }
 
 
@@ -166,6 +168,11 @@ public class Jedi_Drive_Blue extends OpMode {
         telemetry.addData(">", "Robot Ready.  Press Play.");
         telemetry.addLine("GOOD LUCK JEDI!");
         telemetry.update();
+        linearActuator1.setPosition(0.1);
+        linearActuator2.setPosition(0.1);
+
+        prism.loadAnimationsFromArtboard(GoBildaPrismDriver.Artboard.ARTBOARD_0);
+
     }
 
     //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -313,6 +320,8 @@ public class Jedi_Drive_Blue extends OpMode {
 
         if (longShotTrigger) {
             launchSequenceActive = true;
+            // Apply the high-speed PIDF profile
+            shooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, LONG_PIDF);
             shooterTargetVelocity = LONG_SHOT_VELOCITY;
             linearActuator1.setPosition(LONG_SHOT_ACTUATOR_POS);
             linearActuator2.setPosition(LONG_SHOT_ACTUATOR_POS);
@@ -325,6 +334,8 @@ public class Jedi_Drive_Blue extends OpMode {
             }
         } else if (shortShotTrigger) {
             launchSequenceActive = true;
+            // Apply the low-speed PIDF profile
+            shooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, SHORT_PIDF);
             shooterTargetVelocity = SHORT_SHOT_VELOCITY;
             linearActuator1.setPosition(SHORT_SHOT_ACTUATOR_POS);
             linearActuator2.setPosition(SHORT_SHOT_ACTUATOR_POS);
@@ -338,6 +349,8 @@ public class Jedi_Drive_Blue extends OpMode {
         } else {
             launchSequenceActive = false;
             shootTimer.reset();
+            // Set a default PIDF profile when motors are off
+            shooter.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, SHORT_PIDF);
             // All motors stop when the trigger is released, so powers remain 0.0
         }
 
@@ -390,4 +403,3 @@ public class Jedi_Drive_Blue extends OpMode {
         telemetry.update();
     }
 }
-
