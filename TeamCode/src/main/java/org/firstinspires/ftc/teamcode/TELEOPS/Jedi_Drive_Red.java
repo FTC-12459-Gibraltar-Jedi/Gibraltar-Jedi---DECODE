@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.TELEOPS;
 
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.PanelsTelemetry;
@@ -22,6 +22,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.Prism.GoBildaPrismDriver;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+
 import java.util.function.Supplier;
 
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -29,7 +30,7 @@ import java.util.function.Supplier;
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 @Configurable
 @TeleOp
-public class Jedi_Drive_Blue extends OpMode {
+public class Jedi_Drive_Red extends OpMode {
 
     // --- Shooter Constants ---
     // Gear ratio: (teeth on driven gear) / (teeth on driving gear)
@@ -119,7 +120,7 @@ public class Jedi_Drive_Blue extends OpMode {
         //-------------------
 
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
-        limelight.pipelineSwitch(0);
+        limelight.pipelineSwitch(1);
 
 
         //-------------------
@@ -168,8 +169,8 @@ public class Jedi_Drive_Blue extends OpMode {
         telemetry.addData(">", "Robot Ready.  Press Play.");
         telemetry.addLine("GOOD LUCK JEDI!");
         telemetry.update();
-        linearActuator1.setPosition(0.1);
-        linearActuator2.setPosition(0.1);
+        linearActuator1.setPosition(0.5);
+        linearActuator2.setPosition(0.5);
 
         prism.loadAnimationsFromArtboard(GoBildaPrismDriver.Artboard.ARTBOARD_0);
 

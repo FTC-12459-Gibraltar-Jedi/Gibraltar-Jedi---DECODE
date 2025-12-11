@@ -44,7 +44,7 @@ public class Shooter_Logic_Slow {
     private static final double SHOOTER_TARGET_VELOCITY = (MOTOR_TARGET_RPM / 60.0) * SHOOTER_CPR;
     // Allow feeding when RPM is at 96% of target
     private static final double SHOOTER_VELOCITY_TOLERANCE = 0.96;
-    private double SHOOTER_MAX_SPINUP_TIME = 3;
+    private double SHOOTER_MAX_SPINUP_TIME = 2.25;
     private boolean shotComanded = false;
 
 
