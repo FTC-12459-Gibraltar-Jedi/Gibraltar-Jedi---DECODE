@@ -129,7 +129,7 @@ public class CLOSE_RED_9_BALL extends OpMode {
                 break;
             case shoot_preload:
                 if (!follower.isBusy()) {
-                    if (!shotsTriggered) {
+                    if (!shotsTriggered && pathTimer.getElapsedTimeSeconds() > 1.0) {
                         shoot.Shoot(true);
                         shotsTriggered = true;
 
